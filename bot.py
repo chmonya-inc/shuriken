@@ -6,7 +6,7 @@ import os
 
 # --- КОНФИГУРАЦИЯ ---
 BOT_TOKEN = '8766592998:AAE-sXbokn0pzoi1CIVhL8ODq4QFSNx9a1o'
-WEB_APP_URL = 'https://твой-ник.github.io/твой-репозиторий/'
+WEB_APP_URL = 'https://chmonya-inc.github.io/shuriken/'
 ADMIN_IDS = [5136561232, 7124786200]
 MAIN_ADMIN = 7124786200
 
