@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+            color: #ffffff;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .content {
+            flex: 1;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .content.active {
+            display: flex;
+            opacity: 1;
+            transform: scale(1);
+        }
+        .balance-container {
+            text-align: center;
+            width: 100%;
+        }
+        .balance-amount {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            width: 100%;
+        }
+        .action-btn {
+            flex: 1;
+            max-width: 140px;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .btn-deposit {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .btn-withdraw {
+            background: rgba(100, 100, 100, 0.3);
+            color: #8e8e93;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .action-btn:active { transform: scale(0.95); }
+        
+        .deposit-form {
+            width: 100%;
+            max-width: 320px;
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .deposit-form.active {
+            display: flex;
+        }
+        .form-title {
+            font-size: 22px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .deposit-input {
+            width: 100%;
+            padding: 18px 20px;
+            font-size: 20px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            color: #ffffff;
+            outline: none;
+            transition: all 0.25s ease;
+            text-align: center;
+        }
+        .deposit-input:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.12);
+        }
+        .deposit-input::placeholder {
+            color: #6e6e73;
+            font-weight: 400;
+        }
+        .currency-label {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6e6e73;
+            font-size: 16px;
+            font-weight: 500;
+            pointer-events: none;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            font-size: 16px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .submit-btn:active {
+            transform: scale(0.96);
+            opacity: 0.9;
+        }
+        .submit-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+        .back-btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 15px;
+            font-weight: 500;
+            background: transparent;
+            color: #6e6e73;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .back-btn:active {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 70px;
+            background: rgba(28, 28, 30, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: env(safe-area-inset-bottom);
+            position: relative;
+        }
+        .bottom-nav::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            height: 100%;
+            color: #6e6e73;
+            transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: pointer;
+        }
+        .nav-item.active { color: #ffffff; }
+        .icon-box {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            margin-bottom: 6px;
+            transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .nav-item.active .icon-box {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        .nav-item:active .icon-box { transform: scale(0.95); }
+        .nav-item svg { width: 24px; height: 24px; fill: currentColor; }
+        .nav-item span { font-size: 12px; font-weight: 500; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.1); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+        .nav-item.active .icon-box { animation: pulse 2s infinite; }
+        .tab-content { display: none; width: 100%; height: 100%; justify-content: center; align-items: center; flex-direction: column; }
+        .tab-content.active { display: flex; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div id="tab-play" class="content tab-content active">
+        <div id="main-view" class="balance-container">
+            <div class="balance-amount"><span id="balance">0.00</span> TON</div>
+            <div class="action-buttons">
+                <button class="action-btn btn-deposit" onclick="showDepositForm()">Пополнить</button>
+                <button class="action-btn btn-withdraw" onclick="withdraw()">Вывести</button>
+            </div>
+        </div>
+        
+        <div id="deposit-view" class="deposit-form">
+            <div class="form-title">Пополнение баланса</div>
+            <div class="input-wrapper">
+                <input type="number" id="deposit-amount" class="deposit-input" placeholder="0.00" step="0.01" min="0.01">
+                <span class="currency-label">TON</span>
+            </div>
+            <button class="submit-btn" onclick="submitDeposit()">
+                <span>Продолжить</span>
+                <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+            </button>
+            <button class="back-btn" onclick="hideDepositForm()">← Назад</button>
+        </div>
+    </div>
+
+    <div id="tab-balance" class="content tab-content">
+        <div class="balance-container">
+            <div class="balance-amount"><span id="balance2">0.00</span> TON</div>
+            <div class="action-buttons">
+                <button class="action-btn btn-deposit" onclick="showDepositForm()">Пополнить</button>
+                <button class="action-btn btn-withdraw" onclick="withdraw()">Вывести</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav" id="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('play', this)">
+            <div class="icon-box">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <span>Играть</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('balance', this)">
+            <div class="icon-box">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.19v-1.71c1.52-.29 2.72-1.16 2.72-2.77 0-2.03-1.66-2.79-3.5-3.22z"/></svg>
+            </div>
+            <span>Баланс</span>
+        </div>
+    </nav>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        const userId = tg.initDataUnsafe?.user?.id || 0;
+        console.log('🔧 Mini App запущен, User ID:', userId);
+
+        function showDepositForm() {
+            document.getElementById('main-view').classList.add('hidden');
+            document.getElementById('deposit-view').classList.add('active');
+            document.getElementById('bottom-nav').classList.add('hidden');
+            document.getElementById('deposit-amount').value = '';
+            document.getElementById('deposit-amount').focus();
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function hideDepositForm() {
+            document.getElementById('main-view').classList.remove('hidden');
+            document.getElementById('deposit-view').classList.remove('active');
+            document.getElementById('bottom-nav').classList.remove('hidden');
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function submitDeposit() {
+            const amount = parseFloat(document.getElementById('deposit-amount').value);
+            
+            console.log('💰 Введённая сумма:', amount);
+            
+            if (!amount || amount <= 0) {
+                tg.showAlert('Введите корректную сумму');
+                return;
+            }
+
+            const data = JSON.stringify({
+                action: 'deposit_request',
+                user_id: userId,
+                amount: amount
+            });
+            
+            console.log('📤 Отправляем данные боту:', data);
+            tg.sendData(data);
+            
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            
+            tg.showAlert('Заявка отправлена! Проверьте чат с ботом.');
+            
+            setTimeout(() => {
+                tg.close();
+            }, 500);
+        }
+
+        function withdraw() {
+            tg.showAlert('Функция вывода в разработке');
+        }
+
+        function switchTab(tabName, element) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+                setTimeout(() => {
+                    if (!tab.classList.contains('active')) {
+                        tab.style.opacity = '0';
+                        tab.style.transform = 'scale(0.95)';
+                    }
+                }, 100);
+            });
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const activeTab = document.getElementById('tab-' + tabName);
+            activeTab.classList.add('active');
+            setTimeout(() => {
+                activeTab.style.opacity = '1';
+                activeTab.style.transform = 'scale(1)';
+            }, 50);
+            element.classList.add('active');
+            if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+        }
+    </script>
+</body>
+</html>
